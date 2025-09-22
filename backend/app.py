@@ -48,4 +48,19 @@ def create_expenses():
 def update_expense(expense_id):
     e = Expense.query.get_or_404(expense_id)
     data = request.json or {}
-    
+    if 'title' in data: e.title = data['title']
+    if 'amount' in data: e.amount = float(data['amount'])
+    if 'category' in data: e.category = data['category']
+    if 'date' in data: e.date = data['date']
+    if 'user_id' in data: e.user_id = data['user_id']
+    db.session.commit()
+    return jsonify(e.to_dict())
+
+@app.delete('/api/expenses/<int:expense_id>')
+def delete_expense(expense_id):
+    e = Expense.query.get_or_404(expense_id)
+    db.session.delete(e); db.session.commit()
+    return ('',204)
+
+if __name__ == '__main__':
+    app.run(debug=True)
