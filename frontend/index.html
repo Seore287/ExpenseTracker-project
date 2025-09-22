@@ -3,14 +3,23 @@
     <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="stylesheet" href="style.css">
-        <script src="app.js" defer></script>
+        <link rel="stylesheet" href="assets/style.css">
         <title>Expense Tracker</title>
     </head>
     <body>
         <header>
             <h1>Expense Tracker</h1>
-            <span class="badge">Local •Offline</span>
+            <div class="toolbar">
+                <span class="badge">Local •Offline</span>
+                <label style="min-width:160px;">
+                    Currency
+                    <select id="currency-select"></select>
+                </label>
+                <label style="min-width:180px;">
+                    Locale
+                    <select id="locale-select"></select>
+                </label>
+            </div>
         </header>
 
         <main class="grid grid-3">
@@ -33,10 +42,15 @@
                             <datalist id="category-list"></datalist>
                         </label>
                     </div>
-                    <label>Date
+                    <div class="row">
+                        <label>Date
                         <input id="date" type="date" required/>
                     </label>
-                    <div class="actions" style="margin-top: 8px;">
+                    <label title="If checked, this will auto-add each month on load.">Recurring (Monthly)
+                        <input id="recurring" type="checkbox"/>
+                    </label>
+                    </div>
+                    <div class="actions" style="margin-top:8px;">
                         <button class="btn-primary" type="submit">Add</button>
                         <button type="button" id="reset-form">Reset</button>
                     </div>
@@ -87,11 +101,29 @@
                         <div class="value" id="kpi-count">0</div>
                     </div>
                 </div>
+                <h2 style="margin-top: 16px;">Category Breakdown</h2>
+                <canvas id="chart" width="600" height="320"></canvas>
                 <p class="footer-note">Tip: click table headers to sort.</p>
               </section>
 
               <section class="card" style="grid-column: span 1;">
                 <h2>Expenses</h2>
+                <div class="table-tools" style="justify-content: space-between;">
+                <div></div>
+                <div class="pagination">
+                    <label>Page Size 
+                        <select id="page-size">
+                            <option>10</option>
+                            <option selected>20</option>
+                            <option>50</option>
+                            <option>100</option>
+                        </select>
+                    </label>
+                    <button id="prev-page">Prev</button>
+                    <span id="page-info" class="muted">Page 1 / 1</span>
+                    <button id="next-page">Next</button>
+                </div>
+                </div>
                 <table id="table">
                     <thead>
                         <tr>
@@ -113,5 +145,6 @@
                 </table>
               </section>
         </main>
+        <script src="assets/app.js" defer></script>
     </body>
 </html>
