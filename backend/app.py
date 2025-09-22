@@ -1,17 +1,17 @@
-# app.py — serve static site + Expenses API on 127.0.0.1:5500 (no CORS needed)
+# app.py — serve frontend/index.html and /api/* on the same origin (127.0.0.1:5500)
 from flask import Flask, request, jsonify, send_from_directory, abort
 from flask_sqlalchemy import SQLAlchemy
 from datetime import date
 from pathlib import Path
-import os
 
-# --- paths ---
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"          # <-- your index.html folder
+ASSETS_DIR = FRONTEND_DIR / "assets"
 
-# Serve the project root as static (index.html + assets/)
-app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
+# Serve only /assets statically (avoids catching /api/*)
+app = Flask(__name__, static_folder=str(ASSETS_DIR), static_url_path="/assets")
 
-# --- Config ---
+# --- DB config ---
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///expenses.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
@@ -35,33 +35,34 @@ class Expense(db.Model):
             "user_id": self.user_id,
         }
 
-# Create tables once when the server first receives traffic
-@app.before_first_request
+@app.before_request
 def init_db():
     db.create_all()
 
-# --- Static routes ---
+# --- Pages ---
+# Root -> serve frontend/index.html
 @app.route("/")
-def index():
-    # adjust if your index.html lives elsewhere
-    return send_from_directory(BASE_DIR, "index.html")
+def index_root():
+    return send_from_directory(FRONTEND_DIR, "index.html")
 
-@app.route("/<path:path>")
-def static_files(path: str):
-    file_path = BASE_DIR / path
+# Keep /frontend/index.html working too (since your console referenced it)
+@app.route("/frontend/index.html")
+def index_under_frontend():
+    return send_from_directory(FRONTEND_DIR, "index.html")
+
+# Serve any other top-level files that might sit in /frontend (e.g., favicon)
+@app.route("/frontend/<path:filename>")
+def serve_frontend_file(filename):
+    file_path = FRONTEND_DIR / filename
     if file_path.is_file():
-        # serve any asset like assets/app.js, assets/style.css, images, etc.
-        return send_from_directory(BASE_DIR, path)
-    # let /api/* fall through to API routes; otherwise 404
-    if not path.startswith("api/"):
-        abort(404)
-    abort(404)
+        return send_from_directory(FRONTEND_DIR, filename)
+    return ("Not Found", 404)
 
 # --- API ---
 @app.get("/api/expenses")
 def list_expenses():
     q = Expense.query
-    user_id = request.args.get("user_id")  # fixed
+    user_id = request.args.get("user_id")  # correct
     if user_id:
         q = q.filter_by(user_id=user_id)
     items = [e.to_dict() for e in q.order_by(Expense.date.desc(), Expense.id.desc()).all()]
@@ -105,5 +106,5 @@ def delete_expense(expense_id: int):
 
 # --- Entrypoint ---
 if __name__ == "__main__":
-    # Stop any other server (e.g., Live Server) on 5500 first!
+    # Stop any other server using 5500 first (e.g., Live Server)
     app.run(host="127.0.0.1", port=5500, debug=True)
